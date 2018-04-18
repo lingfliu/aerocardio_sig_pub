@@ -9,15 +9,20 @@
 #include <stdio.h>
 #include "UTKModel.h"
 #include "UTKTestWorker.h"
+#include "UTKMModel.h"
 
 using std::cout;
 using std::endl;
 
 unsigned int __stdcall TestThreadTask(LPVOID);
 void callback(UTKModel*);
-
+UTKMModel *model;
 int main()
 {
+	model = getUTKMModel();
+	cout << initFeComm() << endl;
+	cout << "model[10] = " << model->data[10] << endl;
+	while (true);
 	HANDLE thrd;
 	unsigned int thrdLd = 1;
 	int *data = (int*) malloc(sizeof(int) * 200);
@@ -33,7 +38,7 @@ int main()
 
 	thrd = (HANDLE)_beginthreadex(NULL, 0, TestThreadTask, (LPVOID*) worker, 0, &thrdLd);
 
-	cout<<initFeComm()<<endl;
+	
 	WaitForSingleObject(thrd, INFINITE);
 	
 	while (true);

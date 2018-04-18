@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="源文件\model">
+      <UniqueIdentifier>{b34e3d3b-1242-4ccc-8ef1-1b5f3cb6fe57}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -31,6 +34,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="UTKModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="UTKMModel.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
