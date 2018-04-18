@@ -27,6 +27,12 @@
     <ClInclude Include="aerocardio_sig_libwin32.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="UTKTestWorker.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="UTKModel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -35,11 +41,12 @@
     <ClCompile Include="aerocardio_sig_container.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="aerocardio_sig_libwin32.dll">
-      <Filter>资源文件</Filter>
-    </None>
+    <ClCompile Include="UTKTestWorker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="UTKModel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="aerocardio_sig_libwin32.lib">
