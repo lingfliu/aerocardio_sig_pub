@@ -9,14 +9,25 @@
 #include <stdio.h>
 #include "UTKModel.h"
 #include "UTKTestWorker.h"
-#include "UTKMModel.h"
 
 using std::cout;
 using std::endl;
 
 unsigned int __stdcall TestThreadTask(LPVOID);
 
+//fecomm callback declaration
+void onDeviceConnected(UTKMDevice* device);
+void onDeviceDisonnected(UTKMDevice* device);
+void onBytes2Device(char* bytes, int byteLen);
+void onERIRawReceived(UTKMERI *eri);
+void onEcgFilteredReceived(UTKMEcg *ecg);
+void onEcgMarkReceived(UTKMEcgMark *mark);
+
+//instances
 UTKFeComm *feComm;
+
+//TODO: test model, remove later
+UTKMModel *model;
 
 int main()
 {
@@ -30,6 +41,8 @@ int main()
 	feComm->onBytes2Device = onBytes2Device;
 
 	feComm->startWork();
+
+	model = getUTKMModelTest()->getInstance();
 
 	while (true);
     return 0;
@@ -52,6 +65,7 @@ void onERIRawReceived(UTKMERI *eri) {
 }
 
 void onEcgFilteredReceived(UTKMEcg *ecg) {
+	cout << "received ecg filtered" << endl;
 }
 
 //经过卡尔曼滤波的加速度（暂不提供）
