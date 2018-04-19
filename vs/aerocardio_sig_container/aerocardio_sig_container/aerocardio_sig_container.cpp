@@ -15,52 +15,68 @@ using std::cout;
 using std::endl;
 
 unsigned int __stdcall TestThreadTask(LPVOID);
-void callback(UTKModel*);
-UTKMModel *model;
+
+UTKFeComm *feComm;
+
 int main()
 {
-	model = getUTKMModel();
-	cout << initFeComm() << endl;
-	cout << "model[10] = " << model->data[10] << endl;
-	while (true);
-	HANDLE thrd;
-	unsigned int thrdLd = 1;
-	int *data = (int*) malloc(sizeof(int) * 200);
-	for (int m = 0; m < 200; m++) {
-		data[m] = m;
-	}
-	UTKModel *model = new UTKModel(data, 200);
-	delete model;
-	cout << "model is now = " << model << endl;
-	UTKTestWorker *worker = new UTKTestWorker();
-	worker->callback = callback;
-	worker->startWork();
 
-	thrd = (HANDLE)_beginthreadex(NULL, 0, TestThreadTask, (LPVOID*) worker, 0, &thrdLd);
+	feComm = getFeComm();
+	feComm->onDeviceConnected = onDeviceConnected;
+	feComm->onDeviceDisonnected = onDeviceDisonnected;
+	feComm->onERIRawReceived = onERIRawReceived;
+	feComm->onEcgFilteredReceived = onEcgFilteredReceived;
+	feComm->onEcgMarkReceived = onEcgMarkReceived;
+	feComm->onBytes2Device = onBytes2Device;
 
-	
-	WaitForSingleObject(thrd, INFINITE);
-	
+	feComm->startWork();
+
 	while (true);
     return 0;
 }
 
-void callback(UTKModel* model) {
-	cout << "callback model = " << model->getDataAt(10) << endl;
+/*callbacks from fecomm*/
+void onDeviceConnected(UTKMDevice* device) {
+
 }
-unsigned int __stdcall TestThreadTask(LPVOID p) {
-	/*
-	UTKModel *model = (UTKModel*)p;
-	int cnt = 0;
-	while (true)
-	{
-		Sleep(10000);
-		cout <<"is running " << cnt++ << model->getDataAt(10) << endl;
+
+void onDeviceDisonnected(UTKMDevice* device) {
+
+}
+
+//发往设备的字节流
+void onBytes2Device(char* bytes, int byteLen) {
+} 
+
+void onERIRawReceived(UTKMERI *eri) {
+}
+
+void onEcgFilteredReceived(UTKMEcg *ecg) {
+}
+
+//经过卡尔曼滤波的加速度（暂不提供）
+void onImuFilteredReceived(UTKMImu *imu) {
+}
+
+void onEcgMarkReceived(UTKMEcgMark *mark) {
+	if (mark->typeGroup == 1) {
+		//状态标记，暂不处理
 	}
-	*/
+	else if (mark->typeGroup == 2) {
+		switch (mark->type) {
+		case 1:
+			cout << "心率=" << mark->val<<endl;
+			break;
+		case 2:
+			cout << "呼吸率=" << mark->val<<endl;
+			break;
+		}
+	}
+	delete mark;
+}
+
+unsigned int __stdcall TestThreadTask(LPVOID p) {
 	Sleep(2000);
-	UTKTestWorker *worker = (UTKTestWorker*)p;
-	worker->stopWork();
 	return 0;
 }
 
