@@ -79,6 +79,8 @@ public:
 	UTKMDevice *device; //设备信息：型号，采样率，数据包大小
 	void startWork();
 	void stopWork();
+	void reset();
+	void putBytes(unsigned char* bytes, int byteLen);
 };
 
 _DLL_ UTKFeComm* getFeComm();

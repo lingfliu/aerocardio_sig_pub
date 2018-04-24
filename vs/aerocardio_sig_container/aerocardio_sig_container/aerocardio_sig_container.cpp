@@ -42,6 +42,9 @@ int main()
 
 	feComm->startWork();
 
+	int byteLen = 100;
+	unsigned char* bytes = (unsigned char*)malloc(sizeof(unsigned char)*byteLen);
+	feComm->putBytes(bytes, byteLen);
 	model = getUTKMModelTest()->getInstance();
 
 	while (true);
