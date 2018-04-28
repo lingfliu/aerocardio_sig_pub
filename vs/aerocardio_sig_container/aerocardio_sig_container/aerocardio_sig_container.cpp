@@ -41,6 +41,7 @@ int main()
 	feComm->onBytes2Device = onBytes2Device;
 
 	feComm->startWork();
+	feComm->setMessageVersion(25); 
 
 	int byteLen = 100;
 	unsigned char* bytes = (unsigned char*)malloc(sizeof(unsigned char)*byteLen);
