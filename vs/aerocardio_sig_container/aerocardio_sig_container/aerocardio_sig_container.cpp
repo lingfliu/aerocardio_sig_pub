@@ -10,6 +10,9 @@
 #include "UTKModel.h"
 #include "UTKTestWorker.h"
 
+#include <sys\timeb.h>
+__int64 currentTimeInMilli();
+
 using std::cout;
 using std::endl;
 
@@ -29,6 +32,9 @@ UTKFeComm *feComm;
 //TODO: test model, remove later
 UTKMModel *model;
 
+static unsigned int __stdcall msg_mock(LPVOID p);
+static unsigned int mockThrdId = 1001;
+
 int main()
 {
 
@@ -40,8 +46,11 @@ int main()
 	feComm->onEcgMarkReceived = onEcgMarkReceived;
 	feComm->onBytes2Device = onBytes2Device;
 
-	feComm->startWork();
-	feComm->setMessageVersion(25); 
+	feComm->setDeviceModel(UTKMDevice::MODEL_ERI4); 
+
+	int res = feComm->startWork();
+
+	_beginthreadex(NULL, 0, msg_mock, (LPVOID)feComm, 0, &mockThrdId);
 
 	int byteLen = 100;
 	unsigned char* bytes = (unsigned char*)malloc(sizeof(unsigned char)*byteLen);
@@ -98,3 +107,65 @@ unsigned int __stdcall TestThreadTask(LPVOID p) {
 	return 0;
 }
 
+static unsigned int __stdcall msg_mock(LPVOID p) {
+	UTKFeComm *fecomm = (UTKFeComm*)p;
+
+	unsigned char bytes[512];
+	bytes[0] = 0x00;
+	bytes[1] = 0xAA;
+	bytes[2] = 0x00;
+	bytes[3] = 0xcc;
+	bytes[4] = 0x11;
+	bytes[5] = 0x11;
+
+	unsigned int stamp = 0;
+	int byteLen = 0;
+	unsigned char type_pulse = 231;
+	unsigned char type_eri4 = 5;
+	unsigned char type_ecg3 = 1;
+	unsigned char type_status = 100;
+
+	__int64 timerPulse = currentTimeInMilli();
+	__int64 timerERI = timerPulse;
+	__int64 timerECG = timerPulse;
+	__int64 timerStatus = timerPulse;
+
+	while (true) {
+		Sleep(40);
+		byteLen = 9 + 40 + 4 + 6; //250 sps eri
+		bytes[49] = 0x55;
+		bytes[50] = 0xaa;
+		bytes[51] = 0xaa;
+		bytes[52] = 0x55;
+
+		bytes[6] = type_eri4;
+
+		bytes[8] = (stamp & 0xff);
+		bytes[9] = (stamp>>8) & 0xff;
+
+		feComm->putBytes(bytes, byteLen);
+
+		__int64 now = currentTimeInMilli();
+		if (now - timerPulse > 800) {
+			byteLen = 10;
+			bytes[6] = type_pulse;
+			feComm->putBytes(bytes, byteLen);
+			timerPulse = now;
+		}
+		if (now - timerStatus > 5000) {
+			byteLen = 7+2+4;
+			bytes[6] = type_status;
+			bytes[7] = 0x01;
+			bytes[8] = 0x00;
+			feComm->putBytes(bytes, byteLen);
+			timerStatus = now;
+		}
+	}
+}
+
+__int64 currentTimeInMilli() {
+
+	timeb t;
+	ftime(&t);
+	return t.time * 1000 + t.millitm;
+}
