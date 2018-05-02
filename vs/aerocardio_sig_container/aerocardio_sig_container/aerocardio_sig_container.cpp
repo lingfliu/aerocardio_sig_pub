@@ -2,60 +2,45 @@
 //
 
 #include "stdafx.h"
-#include <iostream>
 #include "aerocardio_sig_libwin32.h"
 #include <Windows.h>
 #include <process.h>
-#include <stdio.h>
-#include "UTKModel.h"
-#include "UTKTestWorker.h"
-
 #include <sys\timeb.h>
 __int64 currentTimeInMilli();
+static unsigned int thrdMockId = 1001;
 
+#include <iostream>
 using std::cout;
 using std::endl;
-
-unsigned int __stdcall TestThreadTask(LPVOID);
 
 //fecomm callback declaration
 void onDeviceConnected(UTKMDevice* device);
 void onDeviceDisonnected(UTKMDevice* device);
-void onBytes2Device(char* bytes, int byteLen);
+void onBytes2Device(unsigned char* bytes, int byteLen);
 void onERIRawReceived(UTKMERI *eri);
 void onEcgFilteredReceived(UTKMEcg *ecg);
+void onEcgRawReceived(UTKMEcg *ecg);
 void onEcgMarkReceived(UTKMEcgMark *mark);
 
-//instances
-UTKFeComm *feComm;
-
 //TODO: test model, remove later
-UTKMModel *model;
+//UTKMModel *model;
 
 static unsigned int __stdcall msg_mock(LPVOID p);
 static unsigned int mockThrdId = 1001;
 
+static UTKFeComm *feComm;
 int main()
 {
+	feComm = new UTKFeComm();
 
-	feComm = getFeComm();
-	feComm->onDeviceConnected = onDeviceConnected;
-	feComm->onDeviceDisonnected = onDeviceDisonnected;
-	feComm->onERIRawReceived = onERIRawReceived;
-	feComm->onEcgFilteredReceived = onEcgFilteredReceived;
+	feComm->setDeviceModel(UTKMDevice::MODEL_ERI4); 
+	int res = feComm->startWork();
+
+	feComm->onEcgRawReceived = onEcgRawReceived;
 	feComm->onEcgMarkReceived = onEcgMarkReceived;
 	feComm->onBytes2Device = onBytes2Device;
 
-	feComm->setDeviceModel(UTKMDevice::MODEL_ERI4); 
-
-	int res = feComm->startWork();
-
-	_beginthreadex(NULL, 0, msg_mock, (LPVOID)feComm, 0, &mockThrdId);
-
-	int byteLen = 100;
-	unsigned char* bytes = (unsigned char*)malloc(sizeof(unsigned char)*byteLen);
-	feComm->putBytes(bytes, byteLen);
-	model = getUTKMModelTest()->getInstance();
+	HANDLE thrdMock = (HANDLE) _beginthreadex(NULL, 0, msg_mock, (LPVOID)feComm, 0, &mockThrdId);
 
 	while (true);
     return 0;
@@ -71,23 +56,30 @@ void onDeviceDisonnected(UTKMDevice* device) {
 }
 
 //发往设备的字节流
-void onBytes2Device(char* bytes, int byteLen) {
+void onBytes2Device(unsigned char* bytes, int byteLen) {
 } 
 
 void onERIRawReceived(UTKMERI *eri) {
 }
 
-void onEcgFilteredReceived(UTKMEcg *ecg) {
-	cout << "received ecg filtered" << endl;
+void onEcgRawReceived(UTKMEcg *ecg) {
+	cout << "console: received ecg, time = " << ecg->startTime << endl;
 }
 
-//经过卡尔曼滤波的加速度（暂不提供）
+void onEcgFilteredReceived(UTKMEcg *ecg) {
+	cout << "console: received ecg filtered" << endl;
+}
+
+//加速度原始数据
 void onImuFilteredReceived(UTKMImu *imu) {
 }
 
 void onEcgMarkReceived(UTKMEcgMark *mark) {
 	if (mark->typeGroup == 1) {
-		//状态标记，暂不处理
+		if (mark->type == 1) {
+			//电压状态
+			cout << "console: received power mark, value = " << mark->val << endl;
+		}
 	}
 	else if (mark->typeGroup == 2) {
 		switch (mark->type) {
@@ -102,12 +94,7 @@ void onEcgMarkReceived(UTKMEcgMark *mark) {
 	delete mark;
 }
 
-unsigned int __stdcall TestThreadTask(LPVOID p) {
-	Sleep(2000);
-	return 0;
-}
-
-static unsigned int __stdcall msg_mock(LPVOID p) {
+unsigned int __stdcall msg_mock(LPVOID p) {
 	UTKFeComm *fecomm = (UTKFeComm*)p;
 
 	unsigned char bytes[512];
@@ -130,19 +117,20 @@ static unsigned int __stdcall msg_mock(LPVOID p) {
 	__int64 timerECG = timerPulse;
 	__int64 timerStatus = timerPulse;
 
+	unsigned long long cnt = 0;
 	while (true) {
 		Sleep(40);
-		byteLen = 9 + 40 + 4 + 6; //250 sps eri
-		bytes[49] = 0x55;
-		bytes[50] = 0xaa;
-		bytes[51] = 0xaa;
-		bytes[52] = 0x55;
+
+		byteLen = 9 + 120 + 4 + 6; //250 sps eri
+		bytes[129] = 0x55;
+		bytes[130] = 0xaa;
+		bytes[131] = 0xaa;
+		bytes[132] = 0x55;
 
 		bytes[6] = type_eri4;
 
 		bytes[8] = (stamp & 0xff);
-		bytes[9] = (stamp>>8) & 0xff;
-
+		bytes[9] = (stamp >> 8) & 0xff;
 		feComm->putBytes(bytes, byteLen);
 
 		__int64 now = currentTimeInMilli();
@@ -153,7 +141,7 @@ static unsigned int __stdcall msg_mock(LPVOID p) {
 			timerPulse = now;
 		}
 		if (now - timerStatus > 5000) {
-			byteLen = 7+2+4;
+			byteLen = 7 + 2 + 4;
 			bytes[6] = type_status;
 			bytes[7] = 0x01;
 			bytes[8] = 0x00;
@@ -162,9 +150,7 @@ static unsigned int __stdcall msg_mock(LPVOID p) {
 		}
 	}
 }
-
 __int64 currentTimeInMilli() {
-
 	timeb t;
 	ftime(&t);
 	return t.time * 1000 + t.millitm;

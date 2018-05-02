@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma once
+
 #define _DLL_ __declspec(dllexport) 
 
 class _DLL_ UTKMModel {
@@ -25,7 +27,7 @@ public:
 	UTKMImu();
 	~UTKMImu();
 	void setData(int *data, int dataLen);
-}; 
+};
 
 class _DLL_ UTKMEcg {
 public:
@@ -43,7 +45,7 @@ public:
 	~UTKMEcg();
 };
 
-class _DLL_ UTKMERI{
+class _DLL_ UTKMERI {
 public:
 	unsigned char id[8];
 
@@ -76,6 +78,7 @@ public:
 	int val;
 };
 
+
 class _DLL_ UTKMDevice {
 public:
 	static int const STATE_DISCONNECTED = 1;
@@ -103,23 +106,25 @@ public:
 
 class _DLL_ UTKFeComm {
 public:
+	//callbacks
 	void(*onDeviceConnected)(UTKMDevice* device);
 	void(*onDeviceDisonnected)(UTKMDevice* device);
-	void(*onBytes2Device)(char* bytes, int byteLen); //发往设备的字节流
-	void(*onERIRawReceived)(UTKMERI *eri);
-	void(*onEcgRawReceive)(UTKMEcg *ecg);
-	void(*onEcgFilteredReceived)(UTKMEcg *ecg);
-	void(*onImuFilteredReceived)(UTKMImu *imu); //经过卡尔曼滤波的加速度（暂时不提供）
-	void(*onEcgMarkReceived)(UTKMEcgMark *mark);
+	void(*onBytes2Device)(unsigned char* bytes, int byteLen); //发往设备的字节流
+	void(*onERIRawReceived)(UTKMERI *eri); //原始eri数据
+	void(*onEcgRawReceived)(UTKMEcg *ecg); //原始ecg数据
+	void(*onEcgFilteredReceived)(UTKMEcg *ecg); //滤波后ecg数据
+	void(*onImuFilteredReceived)(UTKMImu *imu); //采集到的IMU数据
+	void(*onEcgMarkReceived)(UTKMEcgMark *mark); //呼吸，心率，电量
 
 	UTKMDevice *device; //设备信息：型号，采样率，数据包大小
 	int startWork();
 	void stopWork();
 	void reset();
+
 	int setDeviceModel(int model);
 	void putBytes(unsigned char* bytes, int byteLen);
+
+	~UTKFeComm();
+	UTKFeComm();
+
 };
-
-_DLL_ UTKFeComm* getFeComm();
-
-_DLL_ UTKMModel* getUTKMModelTest();
