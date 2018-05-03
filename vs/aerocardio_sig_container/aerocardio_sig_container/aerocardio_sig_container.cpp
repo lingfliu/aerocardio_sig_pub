@@ -6,8 +6,6 @@
 #include <Windows.h>
 #include <process.h>
 #include <sys\timeb.h>
-__int64 currentTimeInMilli();
-static unsigned int thrdMockId = 1001;
 
 #include <iostream>
 using std::cout;
@@ -22,25 +20,22 @@ void onEcgFilteredReceived(UTKMEcg *ecg);
 void onEcgRawReceived(UTKMEcg *ecg);
 void onEcgMarkReceived(UTKMEcgMark *mark);
 
-//TODO: test model, remove later
-//UTKMModel *model;
+__int64 currentTimeInMilli();
 
 static unsigned int __stdcall msg_mock(LPVOID p);
 static unsigned int mockThrdId = 1001;
 
-static UTKFeComm *feComm;
 int main()
 {
-	feComm = new UTKFeComm();
+	initFeComm();
+	int res = setDeviceModel(5);
+	startWork();
+	regCbOnEcgRawReceived(onEcgRawReceived);
+	regCbOnEcgFilteredReceived(onEcgFilteredReceived);
+	regCbOnEcgMarkReceived(onEcgMarkReceived);
+	regCbOnByte2Device(onBytes2Device);
 
-	feComm->setDeviceModel(UTKMDevice::MODEL_ERI4); 
-	int res = feComm->startWork();
-
-	feComm->onEcgRawReceived = onEcgRawReceived;
-	feComm->onEcgMarkReceived = onEcgMarkReceived;
-	feComm->onBytes2Device = onBytes2Device;
-
-	HANDLE thrdMock = (HANDLE) _beginthreadex(NULL, 0, msg_mock, (LPVOID)feComm, 0, &mockThrdId);
+	HANDLE thrdMock = (HANDLE) _beginthreadex(NULL, 0, msg_mock, NULL, 0, &mockThrdId);
 
 	while (true);
     return 0;
@@ -57,17 +52,19 @@ void onDeviceDisonnected(UTKMDevice* device) {
 
 //发往设备的字节流
 void onBytes2Device(unsigned char* bytes, int byteLen) {
+	cout << "console: send bytes to device len = " << byteLen << endl;
 } 
 
 void onERIRawReceived(UTKMERI *eri) {
 }
 
 void onEcgRawReceived(UTKMEcg *ecg) {
-	cout << "console: received ecg, time = " << ecg->startTime << endl;
+	//cout << "console: received raw ecg, time = " << ecg->startTime << endl;
 }
 
 void onEcgFilteredReceived(UTKMEcg *ecg) {
-	cout << "console: received ecg filtered" << endl;
+	//cout << "console: received ecg filtered time = " << ecg->startTime << endl;
+	delete ecg;
 }
 
 //加速度原始数据
@@ -95,7 +92,6 @@ void onEcgMarkReceived(UTKMEcgMark *mark) {
 }
 
 unsigned int __stdcall msg_mock(LPVOID p) {
-	UTKFeComm *fecomm = (UTKFeComm*)p;
 
 	unsigned char bytes[512];
 	bytes[0] = 0x00;
@@ -131,13 +127,13 @@ unsigned int __stdcall msg_mock(LPVOID p) {
 
 		bytes[8] = (stamp & 0xff);
 		bytes[9] = (stamp >> 8) & 0xff;
-		feComm->putBytes(bytes, byteLen);
+		putBytes(bytes, byteLen);
 
 		__int64 now = currentTimeInMilli();
 		if (now - timerPulse > 800) {
 			byteLen = 10;
 			bytes[6] = type_pulse;
-			feComm->putBytes(bytes, byteLen);
+			putBytes(bytes, byteLen);
 			timerPulse = now;
 		}
 		if (now - timerStatus > 5000) {
@@ -145,7 +141,7 @@ unsigned int __stdcall msg_mock(LPVOID p) {
 			bytes[6] = type_status;
 			bytes[7] = 0x01;
 			bytes[8] = 0x00;
-			feComm->putBytes(bytes, byteLen);
+			putBytes(bytes, byteLen);
 			timerStatus = now;
 		}
 	}

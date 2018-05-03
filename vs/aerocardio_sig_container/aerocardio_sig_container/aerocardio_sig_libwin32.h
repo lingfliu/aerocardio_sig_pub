@@ -1,20 +1,10 @@
 #pragma once
 
-#pragma once
-
 #define _DLL_ __declspec(dllexport) 
-
-class _DLL_ UTKMModel {
-public:
-	int *data;
-	int dataLen;
-	UTKMModel();
-	~UTKMModel();
-	static UTKMModel* getInstance();
-};
-
 class _DLL_ UTKMImu {
 public:
+	static const int TYPE_IMU_3 = 1;
+
 	unsigned char id[8];
 
 	int *data;
@@ -29,8 +19,11 @@ public:
 	void setData(int *data, int dataLen);
 };
 
+
 class _DLL_ UTKMEcg {
 public:
+	static const int TYPE_ECG_3 = 3;
+	static const int TYPE_ERI_4 = 4;
 	unsigned char id[8];
 
 	int* data;
@@ -38,34 +31,14 @@ public:
 	int type;
 	__int64 startTime;
 	__int64 stopTime;
-
 	int sps;
 
 	UTKMEcg();
 	~UTKMEcg();
+	float ** deplexData(int streamLen, int chnNum);
+	int* multiplexData(float** datum, int streamLen, int chnNum);
 };
 
-class _DLL_ UTKMERI {
-public:
-	unsigned char id[8];
-
-	int *data;
-	int dataLen;
-	int type;
-	__int64 startTime;
-	__int64 stopTime;
-
-	UTKMEcg* extractEcg();
-	UTKMImu* extractImu();
-};
-
-static int const ECGMARK_TYPE_GROUP_STATUS = 1;
-
-static int const ECGMARK_STATUS_POWER = 1;
-
-static int const ECGMARK_PHYSIO_HR = 1;
-static int const ECGMARK_PHYSIO_BR = 2;
-static int const ECGMARK_PHYSIO_NOISE = 3;
 
 class _DLL_ UTKMEcgMark {
 public:
@@ -87,7 +60,6 @@ public:
 	static const int MODEL_ECG3 = 3;//version 2.0, 3-chn, 24 bit resolution
 	static const int MODEL_ERI4 = 5;//version 2.6, 3 chn ECG + 1 chn RESP (24bit) + 6-Axis IMU
 
-
 	int model;
 
 	unsigned char id[8];
@@ -102,29 +74,46 @@ public:
 	int lenImu;
 
 	int state;
+
+	//for stream data
+	int stamp = -1;
+	__int64 prevStartTime = 0;
+	bool isStreamInited = false;
+
+	__int64 lastTimeFeMessage = 0;
 };
 
-class _DLL_ UTKFeComm {
+class _DLL_ UTKMERI {
 public:
-	//callbacks
-	void(*onDeviceConnected)(UTKMDevice* device);
-	void(*onDeviceDisonnected)(UTKMDevice* device);
-	void(*onBytes2Device)(unsigned char* bytes, int byteLen); //发往设备的字节流
-	void(*onERIRawReceived)(UTKMERI *eri); //原始eri数据
-	void(*onEcgRawReceived)(UTKMEcg *ecg); //原始ecg数据
-	void(*onEcgFilteredReceived)(UTKMEcg *ecg); //滤波后ecg数据
-	void(*onImuFilteredReceived)(UTKMImu *imu); //采集到的IMU数据
-	void(*onEcgMarkReceived)(UTKMEcgMark *mark); //呼吸，心率，电量
+	static const int TYPE_ECG_3 = 3; //3 ecg 24 bit
+	static const int TYPE_ERI_4 = 4; //3 ecg + 1 resp + 3 axis imu
 
-	UTKMDevice *device; //设备信息：型号，采样率，数据包大小
-	int startWork();
-	void stopWork();
-	void reset();
+	unsigned char id[8];
 
-	int setDeviceModel(int model);
-	void putBytes(unsigned char* bytes, int byteLen);
+	int *data;
+	int dataLen;
+	int type;
+	__int64 startTime;
+	__int64 stopTime;
 
-	~UTKFeComm();
-	UTKFeComm();
-
+	UTKMEcg* extractEcg();
+	UTKMImu* extractImu();
 };
+
+
+_DLL_ int initFeComm();
+_DLL_ void regCbOnDeviceConnected(void(*onDeviceConnected)(UTKMDevice*));
+_DLL_ void regCbOnDeviceDisconnected(void(*onDeviceDisonnected)(UTKMDevice*));
+_DLL_ void regCbOnByte2Device(void(*onBytes2Device)(unsigned char*, int)); //发往设备的字节流
+_DLL_ void regCbOnERIRawReceived(void(*onERIRawReceived)(UTKMERI *)); //原始eri数据
+_DLL_ void regCbOnEcgRawReceived(void(*onEcgRawReceived)(UTKMEcg *)); //原始ecg数据
+_DLL_ void regCbOnEcgFilteredReceived(void(*onEcgFilteredReceived)(UTKMEcg *)); //滤波后ecg数据
+_DLL_ void regCbOnImuFilteredReceived(void(*onImuFilteredReceived)(UTKMImu *)); //采集到的IMU数据
+_DLL_ void regCbOnEcgMarkReceived(void(*onEcgMarkReceived)(UTKMEcgMark *)); //呼吸，心率，电量
+
+_DLL_ int setDeviceModel(int model);
+_DLL_ int startWork();
+_DLL_ void stopWork();
+_DLL_ void reset();
+_DLL_ void putBytes(unsigned char* bytes, int byteLen);
+_DLL_ UTKMDevice* getdevice();
