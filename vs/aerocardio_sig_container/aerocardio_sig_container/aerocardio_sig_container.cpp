@@ -56,10 +56,13 @@ void onBytes2Device(unsigned char* bytes, int byteLen) {
 } 
 
 void onERIRawReceived(UTKMERI *eri) {
+	//这里请直接删除eri
+	delete eri;
 }
 
 void onEcgRawReceived(UTKMEcg *ecg) {
 	//cout << "console: received raw ecg, time = " << ecg->startTime << endl;
+	//这里暂时不要delete ecg，此处的引用会在内部被使用
 }
 
 void onEcgFilteredReceived(UTKMEcg *ecg) {
@@ -69,6 +72,8 @@ void onEcgFilteredReceived(UTKMEcg *ecg) {
 
 //加速度原始数据
 void onImuFilteredReceived(UTKMImu *imu) {
+	//这里请直接删除imu
+	delete imu;
 }
 
 void onEcgMarkReceived(UTKMEcgMark *mark) {
@@ -88,6 +93,7 @@ void onEcgMarkReceived(UTKMEcgMark *mark) {
 			break;
 		}
 	}
+	//这里请直接删除mark
 	delete mark;
 }
 
@@ -117,6 +123,7 @@ unsigned int __stdcall msg_mock(LPVOID p) {
 	while (true) {
 		Sleep(40);
 
+		//模拟采样数据
 		byteLen = 9 + 120 + 4 + 6; //250 sps eri
 		bytes[129] = 0x55;
 		bytes[130] = 0xaa;
@@ -129,6 +136,7 @@ unsigned int __stdcall msg_mock(LPVOID p) {
 		bytes[9] = (stamp >> 8) & 0xff;
 		putBytes(bytes, byteLen);
 
+		//模拟心跳包
 		__int64 now = currentTimeInMilli();
 		if (now - timerPulse > 800) {
 			byteLen = 10;
@@ -136,6 +144,7 @@ unsigned int __stdcall msg_mock(LPVOID p) {
 			putBytes(bytes, byteLen);
 			timerPulse = now;
 		}
+		//模拟电量数据
 		if (now - timerStatus > 5000) {
 			byteLen = 7 + 2 + 4;
 			bytes[6] = type_status;
