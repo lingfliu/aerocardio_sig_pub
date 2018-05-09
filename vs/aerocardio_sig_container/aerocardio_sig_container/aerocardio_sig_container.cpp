@@ -11,6 +11,12 @@
 using std::cout;
 using std::endl;
 
+#include <fstream>
+using std::fstream;
+using std::ofstream;
+using std::ifstream;
+using std::ios;
+
 //fecomm callback declaration
 void onDeviceConnected(UTKMDevice* device);
 void onDeviceDisonnected(UTKMDevice* device);
@@ -24,6 +30,7 @@ __int64 currentTimeInMilli();
 
 static unsigned int __stdcall msg_mock(LPVOID p);
 static unsigned int mockThrdId = 1001;
+static unsigned int __stdcall stream_file_demo(LPVOID p);
 
 int main()
 {
@@ -35,7 +42,9 @@ int main()
 	regCbOnEcgMarkReceived(onEcgMarkReceived);
 	regCbOnByte2Device(onBytes2Device);
 
-	HANDLE thrdMock = (HANDLE) _beginthreadex(NULL, 0, msg_mock, NULL, 0, &mockThrdId);
+	//HANDLE thrdMock = (HANDLE) _beginthreadex(NULL, 0, msg_mock, NULL, 0, &mockThrdId);
+	HANDLE thrdMock = (HANDLE)_beginthreadex(NULL, 0, stream_file_demo, NULL, 0, &mockThrdId);
+
 
 	while (true);
     return 0;
@@ -95,6 +104,40 @@ void onEcgMarkReceived(UTKMEcgMark *mark) {
 	}
 	//这里请直接删除mark
 	delete mark;
+}
+
+
+/*
+ * 从test_torso.dat读取数据流，解析，滤波，并输出心率与呼吸率估测值
+ */
+unsigned int __stdcall stream_file_demo(LPVOID p) {
+	ifstream fid("test_torso.dat", ios::binary);
+	if (!fid) {
+		cout << "failed to read file." << endl;
+		return 0;
+	}
+	char buff[139];
+	int len = 139;
+	while (true) {
+		Sleep(20);
+		fid.read(buff, len);
+		if (fid) {
+			len = 139;
+			putBytes((unsigned char*)buff, len);
+		}
+		else {
+			len = fid.gcount();
+			if (len > 0) {
+				putBytes((unsigned char*)buff, len);
+			}
+			break;
+		}
+	}
+	cout << "finished reading file" << endl;
+
+	fid.close();
+
+	return 0;
 }
 
 unsigned int __stdcall msg_mock(LPVOID p) {
