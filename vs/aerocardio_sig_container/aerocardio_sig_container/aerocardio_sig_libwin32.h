@@ -76,11 +76,11 @@ public:
 	int state;
 
 	//for stream data
-	int stamp = -1;
-	__int64 prevStartTime = 0;
-	bool isStreamInited = false;
+	int stamp;
+	__int64 prevStartTime;
+	bool isStreamInited;
 
-	__int64 lastTimeFeMessage = 0;
+	__int64 lastTimeFeMessage;
 };
 
 class _DLL_ UTKMERI {
