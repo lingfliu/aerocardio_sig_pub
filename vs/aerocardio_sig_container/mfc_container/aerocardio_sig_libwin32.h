@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #define _DLL_ __declspec(dllexport) 
 class _DLL_ UTKMImu {
@@ -76,11 +76,11 @@ public:
 	int state;
 
 	//for stream data
-	int stamp;
-	__int64 prevStartTime;
-	bool isStreamInited;
+	int stamp; // = -1;
+	__int64 prevStartTime;// = 0;
+	bool isStreamInited;// = false;
 
-	__int64 lastTimeFeMessage;
+	__int64 lastTimeFeMessage;// = 0;
 };
 
 class _DLL_ UTKMERI {
@@ -105,12 +105,12 @@ _DLL_ int initFeComm();
 _DLL_ int destroyFeComm();
 _DLL_ void regCbOnDeviceConnected(void(*onDeviceConnected)(UTKMDevice*));
 _DLL_ void regCbOnDeviceDisconnected(void(*onDeviceDisonnected)(UTKMDevice*));
-_DLL_ void regCbOnByte2Device(void(*onBytes2Device)(unsigned char*, int)); //·¢ÍùÉè±¸µÄ×Ö½ÚÁ÷
-_DLL_ void regCbOnERIRawReceived(void(*onERIRawReceived)(UTKMERI *)); //Ô­Ê¼eriÊı¾İ
-_DLL_ void regCbOnEcgRawReceived(void(*onEcgRawReceived)(UTKMEcg *)); //Ô­Ê¼ecgÊı¾İ
-_DLL_ void regCbOnEcgFilteredReceived(void(*onEcgFilteredReceived)(UTKMEcg *)); //ÂË²¨ºóecgÊı¾İ
-_DLL_ void regCbOnImuFilteredReceived(void(*onImuFilteredReceived)(UTKMImu *)); //²É¼¯µ½µÄIMUÊı¾İ
-_DLL_ void regCbOnEcgMarkReceived(void(*onEcgMarkReceived)(UTKMEcgMark *)); //ºôÎü£¬ĞÄÂÊ£¬µçÁ¿
+_DLL_ void regCbOnByte2Device(void(*onBytes2Device)(unsigned char*, int)); //å‘å¾€è®¾å¤‡çš„å­—èŠ‚æµ
+_DLL_ void regCbOnERIRawReceived(void(*onERIRawReceived)(UTKMERI *)); //åŸå§‹eriæ•°æ®
+_DLL_ void regCbOnEcgRawReceived(void(*onEcgRawReceived)(UTKMEcg *)); //åŸå§‹ecgæ•°æ®
+_DLL_ void regCbOnEcgFilteredReceived(void(*onEcgFilteredReceived)(UTKMEcg *)); //æ»¤æ³¢åecgæ•°æ®
+_DLL_ void regCbOnImuFilteredReceived(void(*onImuFilteredReceived)(UTKMImu *)); //é‡‡é›†åˆ°çš„IMUæ•°æ®
+_DLL_ void regCbOnEcgMarkReceived(void(*onEcgMarkReceived)(UTKMEcgMark *)); //å‘¼å¸ï¼Œå¿ƒç‡ï¼Œç”µé‡
 
 _DLL_ int setDeviceModel(int model);
 _DLL_ int startWork();
